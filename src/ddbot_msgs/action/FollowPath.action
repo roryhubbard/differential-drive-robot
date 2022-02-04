@@ -2,7 +2,7 @@
 geometry_msgs/PoseStamped[] poses
 ---
 # result definition
-bool success false
+bool success
 ---
 # feedback
 int16 number_of_poses_remaining
