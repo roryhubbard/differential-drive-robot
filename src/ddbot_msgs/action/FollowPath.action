@@ -2,7 +2,7 @@
 geometry_msgs/PoseStamped[] poses
 ---
 # result definition
-int32[] missed_waypoints
+bool success false
 ---
 # feedback
-uint32 current_waypoint
+int16 number_of_poses_remaining
