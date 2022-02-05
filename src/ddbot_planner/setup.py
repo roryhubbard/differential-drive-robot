@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = 'planner'
+package_name = 'ddbot_planner'
 
 setup(
     name=package_name,
@@ -20,8 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'planner_service = planner.planner_service:main',
-            'planner_client = planner.planner_client:main',
+            'ddbot_planner_service = ddbot_planner.planner_service:main',
+            'ddbot_planner_client = ddbot_planner.planner_client:main',
         ],
     },
 )

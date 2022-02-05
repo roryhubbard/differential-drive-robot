@@ -1,15 +1,15 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>planner</name>
+  <name>ddbot_planner</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
   <maintainer email="calvin3h@gmail.com">chub</maintainer>
   <license>TODO: License declaration</license>
 
+  <depend>rclpy</depend>
   <depend>python-numpy</depend>
   <depend>python-cvxpy-pip</depend>
-  <depend>rclpy</depend>
   <depend>python-transforms3d-pip</depend>
   <depend>python-gurobipy-pip</depend>
 
