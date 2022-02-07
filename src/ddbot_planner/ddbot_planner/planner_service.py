@@ -1,10 +1,9 @@
 import numpy as np
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import Point, PoseStamped, Quaternion
+from geometry_msgs.msg import Point, PoseStamped
 from nav_msgs.srv import GetPlan
-#from tf_transformations import quaternion_from_euler
-from transforms3d.euler import euler2quat
+from tf_transformations import quaternion_from_euler, euler_from_quaternion
 from .diff_drive_planner import DiffDrivePlanner
 
 
@@ -20,8 +19,14 @@ class PlannerService(Node):
     return self.hack_plan(request, response)
 
   def hack_plan(self, request, response):
-    start_pose = request.start.pose
-    goal_pose = request.goal.pose
+    start_velocity = 0.
+    goal_velocity = 0.
+    start_acceleration = 0.
+    goal_acceleration = 0.
+    start_position = request.start.pose.position
+    goal_position = request.goal.pose.position
+    _, _, start_yaw = euler_from_quaternion(request.start.pose.orientation)
+    _, _, goal_yaw = euler_from_quaternion(request.goal.pose.orientation)
 
     travel_time = 10
     time_samples = np.linspace(0, travel_time, 5)
@@ -32,15 +37,23 @@ class PlannerService(Node):
                            poly_degree, smoothness_degree)
 
     ddp.add_cost()
-    ddp.add_constraint(t=0, derivative_order=1, bounds=[0, 0], equality=True)
-    ddp.add_constraint(t=0, derivative_order=2, bounds=[0, 0], equality=True)
     ddp.add_constraint(t=0, derivative_order=0,
-                       bounds=[start_pose.position.x, start_pose.position.y], equality=True)
+      bounds=[start_position.x, start_position.y], equality=True)
+    ddp.add_constraint(t=0, derivative_order=1,
+      bounds=[start_velocity, start_velocity], equality=True)
+    ddp.add_constraint(t=0, derivative_order=2,
+      bounds=[start_acceleration, start_acceleration], equality=True)
+    ddp.add_constraint(t=0, derivative_order=1,
+      bounds=[start_velocity*np.cos(start_yaw), start_velocity*np.sin(start_yaw)], equality=True)
 
-    ddp.add_constraint(t=travel_time, derivative_order=1, bounds=[0, 0], equality=True)
-    ddp.add_constraint(t=travel_time, derivative_order=2, bounds=[0, 0], equality=True)
     ddp.add_constraint(t=travel_time, derivative_order=0,
-                       bounds=[goal_pose.position.x, goal_pose.position.y], equality=True)
+      bounds=[goal_position.x, goal_position.y], equality=True)
+    ddp.add_constraint(t=travel_time, derivative_order=1,
+      bounds=[goal_velocity, goal_velocity], equality=True)
+    ddp.add_constraint(t=travel_time, derivative_order=2,
+      bounds=[goal_acceleration, goal_acceleration], equality=True)
+    ddp.add_constraint(t=travel_time, derivative_order=1,
+      bounds=[goal_velocity*np.cos(goal_yaw), goal_velocity*np.sin(goal_yaw)], equality=True)
 
     square = np.array([
       [1, 1],
@@ -60,8 +73,7 @@ class PlannerService(Node):
       yaw = ddp.recover_yaw(t, 0)
       pose_stamped = PoseStamped()
       pose_stamped.pose.position = Point(x=x, y=y, z=0.)
-      q = euler2quat(0, 0, yaw) # [w, x, y, z]
-      pose_stamped.pose.orientation = Quaternion(x=q[1], y=q[2], z=q[3], w=q[0])
+      pose_stamped.pose.orientation = quaternion_from_euler(0, 0, yaw)
       response.plan.poses.append(pose_stamped)
 
     return response
