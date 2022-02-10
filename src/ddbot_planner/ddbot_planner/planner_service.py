@@ -42,14 +42,10 @@ class PlannerService(Node):
     ddp.add_constraint(t=0, derivative_order=0, bounds=[pi.x, pi.y], equality=True)
     ddp.add_constraint(t=0, derivative_order=1, bounds=[vi, vi], equality=True)
     ddp.add_constraint(t=0, derivative_order=2, bounds=[ai, ai], equality=True)
-    ddp.add_constraint(t=0, derivative_order=1,
-                       bounds=[vi*np.cos(yawi), vi*np.sin(yawi)], equality=True)
 
     ddp.add_constraint(t=travel_time, derivative_order=0, bounds=[pf.x, pf.y], equality=True)
     ddp.add_constraint(t=travel_time, derivative_order=1, bounds=[vf, vf], equality=True)
     ddp.add_constraint(t=travel_time, derivative_order=2, bounds=[af, af], equality=True)
-    ddp.add_constraint(t=travel_time, derivative_order=1,
-                       bounds=[vf*np.cos(yawf), vf*np.sin(yawf)], equality=True)
 
     square = np.array([
       [1, 1],
