@@ -20,8 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'ddbot_planner_service = ddbot_planner.planner_service:main',
-            'ddbot_planner_client = ddbot_planner.planner_client:main',
+            'planner_service = ddbot_planner.planner_service:main',
+            'planner_client = ddbot_planner.planner_client:main',
         ],
     },
 )

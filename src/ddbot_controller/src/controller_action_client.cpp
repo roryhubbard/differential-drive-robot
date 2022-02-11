@@ -5,8 +5,8 @@
 #include <sstream>
 #include <vector>
 
-#include "geometry_msgs/msg/pose_stamped.hpp"
-#include "ddbot_msgs/action/follow_path.hpp"
+#include "geometry_msgs/msg/pose.hpp"
+#include "ddbot_msgs/action/track_trajectory.hpp"
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
@@ -17,22 +17,22 @@ namespace ddbot_controller
 class ControllerActionClient : public rclcpp::Node
 {
 public:
-  using FollowPath = ddbot_msgs::action::FollowPath;
-  using GoalHandleFollowPath = rclcpp_action::ClientGoalHandle<FollowPath>;
+  using TrackTrajectory = ddbot_msgs::action::TrackTrajectory;
+  using GoalHandleFollowPath = rclcpp_action::ClientGoalHandle<TrackTrajectory>;
 
   explicit ControllerActionClient(const rclcpp::NodeOptions & options)
   : Node("controller_action_client", options)
   {
-    this->client_ptr_ = rclcpp_action::create_client<FollowPath>(
+    this->client_ptr_ = rclcpp_action::create_client<TrackTrajectory>(
       this,
-      "follow_path");
+      "track_trajectory");
 
     this->timer_ = this->create_wall_timer(
       std::chrono::milliseconds(500),
       std::bind(&ControllerActionClient::send_goal, this));
   }
 
-  //void send_goal(FollowPath::Goal goal_msg)
+  //void send_goal(TrackTrajectory::Goal goal_msg)
   void send_goal()
   {
     using namespace std::placeholders;
@@ -44,26 +44,30 @@ public:
       rclcpp::shutdown();
     }
 
-    auto pose_stamped1 = geometry_msgs::msg::PoseStamped();
-    pose_stamped1.pose.position.x = 1.0;
-    pose_stamped1.pose.position.y = 1.0;
-    pose_stamped1.pose.position.z = 1.0;
+    auto pose1 = geometry_msgs::msg::Pose();
+    pose1.position.x = 1.0;
+    pose1.position.y = 1.0;
+    pose1.position.z = 1.0;
+    auto tps1 = ddbot_msgs::msg::TrajectoryPointStamped();
+    tps1.trajectory_point.pose = pose1;
 
-    auto pose_stamped2 = geometry_msgs::msg::PoseStamped();
-    pose_stamped2.pose.position.x = 2.0;
-    pose_stamped2.pose.position.y = 2.0;
-    pose_stamped2.pose.position.z = 2.0;
+    auto pose2 = geometry_msgs::msg::Pose();
+    pose2.position.x = 2.0;
+    pose2.position.y = 2.0;
+    pose2.position.z = 2.0;
+    auto tps2 = ddbot_msgs::msg::TrajectoryPointStamped();
+    tps2.trajectory_point.pose = pose2;
 
-    std::vector<geometry_msgs::msg::PoseStamped> poses;
-    poses.push_back(pose_stamped1);
-    poses.push_back(pose_stamped2);
+    std::vector<ddbot_msgs::msg::TrajectoryPointStamped> trajectory;
+    trajectory.push_back(tps1);
+    trajectory.push_back(tps2);
 
-    auto goal_msg = FollowPath::Goal();
-    goal_msg.poses = poses;
+    auto goal_msg = TrackTrajectory::Goal();
+    goal_msg.trajectory = trajectory;
 
     RCLCPP_INFO(this->get_logger(), "Sending goal");
 
-    auto send_goal_options = rclcpp_action::Client<FollowPath>::SendGoalOptions();
+    auto send_goal_options = rclcpp_action::Client<TrackTrajectory>::SendGoalOptions();
     send_goal_options.goal_response_callback =
       std::bind(&ControllerActionClient::goal_response_callback, this, _1);
     send_goal_options.feedback_callback =
@@ -74,7 +78,7 @@ public:
   }
 
 private:
-  rclcpp_action::Client<FollowPath>::SharedPtr client_ptr_;
+  rclcpp_action::Client<TrackTrajectory>::SharedPtr client_ptr_;
   rclcpp::TimerBase::SharedPtr timer_;
 
   void goal_response_callback(std::shared_future<GoalHandleFollowPath::SharedPtr> future)
@@ -89,11 +93,11 @@ private:
 
   void feedback_callback(
     GoalHandleFollowPath::SharedPtr,
-    const std::shared_ptr<const FollowPath::Feedback> feedback)
+    const std::shared_ptr<const TrackTrajectory::Feedback> feedback)
   {
     std::stringstream ss;
-    ss << "Number of poses remaining: ";
-    ss << feedback->number_of_poses_remaining << " ";
+    ss << "Trajectory points remaining: ";
+    ss << feedback->trajectory_points_remaining << " ";
     RCLCPP_INFO(this->get_logger(), ss.str().c_str());
   }
 

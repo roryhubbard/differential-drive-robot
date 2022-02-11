@@ -1,25 +1,27 @@
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import Point, PoseStamped
-from nav_msgs.srv import GetPlan
+from geometry_msgs.msg import Point
+from ddbot_msgs.msg import TrajectoryPointStamped
+from ddbot_msgs.srv import GetTrajectory
 
 
 class PlannerClient(Node):
 
   def __init__(self):
-    super().__init__('example_planner_client')
-    self.client = self.create_client(GetPlan, 'get_plan')
+    super().__init__('planner_client')
+    self.client = self.create_client(GetTrajectory, 'get_trajectory')
     while not self.client.wait_for_service(timeout_sec=1.0):
       self.get_logger().info('service not available, waiting again...')
-    self.req = GetPlan.Request()
+    self.req = GetTrajectory.Request()
 
   def send_request(self):
-    start = PoseStamped()
+    start = TrajectoryPointStamped()
     start_point = Point(x=-2., y=-2., z=0.)
-    start.pose.position = start_point
-    goal = PoseStamped()
+    start.trajectory_point.pose.position = start_point
+    goal = TrajectoryPointStamped()
     goal_point = Point(x=2., y=2., z=0.)
-    goal.pose.position = goal_point
+    goal.trajectory_point.pose.position = goal_point
+
     self.req.start = start
     self.req.goal = goal
     self.future = self.client.call_async(self.req)

@@ -12,6 +12,8 @@
   <depend>python-cvxpy-pip</depend>
   <depend>python-transforms3d-pip</depend>
   <depend>python-gurobipy-pip</depend>
+  <depend>geometry_msgs</depend>
+  <depend>ddbot_msgs</depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

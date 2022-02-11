@@ -53,7 +53,7 @@ def main():
     flats = ddp.eval(t, 0)
     x.append(flats[0])
     y.append(flats[1])
-    yaw.append(ddp.recover_yaw(t, 0))
+    yaw.append(ddp.recover_yaw(t))
 
   fig, ax = plt.subplots(ncols=2)
   ax[0].plot(x, y, '.')

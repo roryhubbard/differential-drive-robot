@@ -2,41 +2,42 @@
 #include <memory>
 #include <thread>
 
-#include "ddbot_msgs/action/follow_path.hpp"
+#include "ddbot_msgs/action/track_trajectory.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "rclcpp_components/register_node_macro.hpp"
 
 namespace ddbot_controller
 {
+
 class ControllerActionServer : public rclcpp::Node
 {
 public:
-  using FollowPath = ddbot_msgs::action::FollowPath;
-  using GoalHandleFollowPath = rclcpp_action::ServerGoalHandle<FollowPath>;
+  using TrackTrajectory = ddbot_msgs::action::TrackTrajectory;
+  using GoalHandleFollowPath = rclcpp_action::ServerGoalHandle<TrackTrajectory>;
 
   explicit ControllerActionServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions())
   : Node("controller_action_server", options)
   {
     using namespace std::placeholders;
 
-    this->action_server_ = rclcpp_action::create_server<FollowPath>(
+    this->action_server_ = rclcpp_action::create_server<TrackTrajectory>(
       this,
-      "follow_path",
+      "track_trajectory",
       std::bind(&ControllerActionServer::handle_goal, this, _1, _2),
       std::bind(&ControllerActionServer::handle_cancel, this, _1),
       std::bind(&ControllerActionServer::handle_accepted, this, _1));
   }
 
 private:
-  rclcpp_action::Server<FollowPath>::SharedPtr action_server_;
+  rclcpp_action::Server<TrackTrajectory>::SharedPtr action_server_;
 
   rclcpp_action::GoalResponse handle_goal(
     const rclcpp_action::GoalUUID & uuid,
-    std::shared_ptr<const FollowPath::Goal> goal)
+    std::shared_ptr<const TrackTrajectory::Goal> goal)
   {
     RCLCPP_INFO(this->get_logger(),
-                "Received follow path request with path size %lu", goal->poses.size());
+                "Received follow path request with path size %lu", goal->trajectory.size());
     (void)uuid;
     return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
   }
@@ -61,12 +62,12 @@ private:
     RCLCPP_INFO(this->get_logger(), "Executing goal");
     rclcpp::Rate loop_rate(1);
     const auto goal = goal_handle->get_goal();
-    auto feedback = std::make_shared<FollowPath::Feedback>();
-    auto & number_of_poses_remaining = feedback->number_of_poses_remaining;
-    number_of_poses_remaining = goal->poses.size();
-    auto result = std::make_shared<FollowPath::Result>();
+    auto feedback = std::make_shared<TrackTrajectory::Feedback>();
+    auto & trajectory_points_remaining = feedback->trajectory_points_remaining;
+    trajectory_points_remaining = goal->trajectory.size();
+    auto result = std::make_shared<TrackTrajectory::Result>();
 
-    for (unsigned long int i = 1; (i < goal->poses.size()) && rclcpp::ok(); ++i) {
+    for (unsigned long int i = 1; (i < goal->trajectory.size()) && rclcpp::ok(); ++i) {
       // Check if there is a cancel request
       if (goal_handle->is_canceling()) {
         result->success = false;
@@ -75,7 +76,7 @@ private:
         return;
       }
       // Update feedback
-      number_of_poses_remaining = goal->poses.size() - i;
+      trajectory_points_remaining = goal->trajectory.size() - i;
       // Publish feedback
       goal_handle->publish_feedback(feedback);
       RCLCPP_INFO(this->get_logger(), "Publish feedback");
