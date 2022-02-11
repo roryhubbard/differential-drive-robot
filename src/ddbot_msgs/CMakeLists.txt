@@ -26,7 +26,10 @@ endif()
 find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
-  "action/FollowPath.action"
+  "msg/TrajectoryPoint.msg"
+  "msg/TrajectoryPointStamped.msg"
+  "srv/GetTrajectory.srv"
+  "action/TrackTrajectory.action"
   DEPENDENCIES geometry_msgs
 )
 

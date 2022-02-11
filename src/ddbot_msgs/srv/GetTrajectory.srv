@@ -1,0 +1,4 @@
+ddbot_msgs/TrajectoryPointStamped start
+ddbot_msgs/TrajectoryPointStamped goal
+---
+ddbot_msgs/TrajectoryPointStamped[] trajectory

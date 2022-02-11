@@ -1,0 +1,2 @@
+std_msgs/Header header
+ddbot_msgs/TrajectoryPoint trajectory_point

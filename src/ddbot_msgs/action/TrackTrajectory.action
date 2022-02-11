@@ -1,0 +1,5 @@
+ddbot_msgs/TrajectoryPointStamped[] trajectory
+---
+bool success
+---
+int16 trajectory_points_remaining
