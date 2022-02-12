@@ -1,11 +1,17 @@
 #include <functional>
 #include <memory>
 #include <thread>
+#include <tuple>
+#include <cmath>
 
-#include "ddbot_msgs/action/track_trajectory.hpp"
+#include <Eigen/Dense>
+
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "rclcpp_components/register_node_macro.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "ddbot_msgs/action/track_trajectory.hpp"
+#include "ddbot_controller/linear_quadratic_regulator.hpp"
 
 namespace ddbot_controller
 {
@@ -14,7 +20,7 @@ class ControllerActionServer : public rclcpp::Node
 {
 public:
   using TrackTrajectory = ddbot_msgs::action::TrackTrajectory;
-  using GoalHandleFollowPath = rclcpp_action::ServerGoalHandle<TrackTrajectory>;
+  using GoalHandleTrackTrajectory = rclcpp_action::ServerGoalHandle<TrackTrajectory>;
 
   explicit ControllerActionServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions())
   : Node("controller_action_server", options)
@@ -43,21 +49,81 @@ private:
   }
 
   rclcpp_action::CancelResponse handle_cancel(
-    const std::shared_ptr<GoalHandleFollowPath> goal_handle)
+    const std::shared_ptr<GoalHandleTrackTrajectory> goal_handle)
   {
     RCLCPP_INFO(this->get_logger(), "Received request to cancel goal");
     (void)goal_handle;
     return rclcpp_action::CancelResponse::ACCEPT;
   }
 
-  void handle_accepted(const std::shared_ptr<GoalHandleFollowPath> goal_handle)
+  void handle_accepted(const std::shared_ptr<GoalHandleTrackTrajectory> goal_handle)
   {
     using namespace std::placeholders;
     // this needs to return quickly to avoid blocking the executor, so spin up a new thread
     std::thread{std::bind(&ControllerActionServer::execute, this, _1), goal_handle}.detach();
   }
 
-  void execute(const std::shared_ptr<GoalHandleFollowPath> goal_handle)
+  Eigen::Vector3d express_in_rotated_frame(const Eigen::Ref<const Eigen::Vector3d>& x, double theta)
+  {
+    using namespace std;
+    Eigen::Matrix3d R;
+    R << cos(theta), sin(theta), 0.,
+        -sin(theta), cos(theta), 0.,
+                 0.,         0., 1.;
+    return R * x;
+  }
+
+  Eigen::Vector3d msg_to_state_vector(const ddbot_msgs::msg::TrajectoryPointStamped &tps)
+  {
+    const auto tp = tps.trajectory_point;
+    const auto x = tp.pose.position.x;
+    const auto y = tp.pose.position.y;
+    const tf2::Quaternion quatr(
+      tp.pose.orientation.x,
+      tp.pose.orientation.y,
+      tp.pose.orientation.z,
+      tp.pose.orientation.w);
+    tf2::Matrix3x3 m(quatr);
+    double roll, pitch, yaw;
+    m.getRPY(roll, pitch, yaw);
+    Eigen::Vector3d{x, y, yaw};
+  }
+
+  std::pair<double, double> lqr_control_input(
+    const ddbot_msgs::msg::TrajectoryPointStamped &reference_state,
+    const ddbot_msgs::msg::TrajectoryPointStamped &current_state,
+    const double &t)
+  {
+    const auto qr = msg_to_state_vector(reference_state);
+    const auto q = msg_to_state_vector(current_state);
+    const auto e = express_in_rotated_frame(qr - q, q(3));
+
+    const auto xr = reference_state.trajectory_point.twist.linear.x;
+    const auto yr = reference_state.trajectory_point.twist.linear.y;
+    const auto vr = std::hypot(xr, yr);
+    const auto wr = reference_state.trajectory_point.twist.angular.z;
+
+    Eigen::Matrix3d A; 
+    A << 1., wr*t,   0.,
+      -wr*t,   1., vr*t,
+         0.,   0.,   1.;
+    Eigen::Matrix<double, 3, 2> B;
+    B << -t, 0.,
+         0., 0.,
+         0., -t;
+    Eigen::Matrix3d Q = Eigen::Matrix3d::Identity();
+    Eigen::Matrix2d R = Eigen::Matrix2d::Identity();
+
+    const auto res = controllers::DiscreteTimeLinearQuadraticRegulator(A, B, Q, R);
+    const auto K = res.K;
+    const auto u = -K * e;
+    const auto v = vr + std::cos(e(3)) + u(1);
+    const auto w = wr + u(2);
+
+    return std::make_pair(v, w);
+  }
+
+  void execute(const std::shared_ptr<GoalHandleTrackTrajectory> goal_handle)
   {
     RCLCPP_INFO(this->get_logger(), "Executing goal");
     rclcpp::Rate loop_rate(1);
@@ -67,7 +133,7 @@ private:
     trajectory_points_remaining = goal->trajectory.size();
     auto result = std::make_shared<TrackTrajectory::Result>();
 
-    for (unsigned long int i = 1; (i < goal->trajectory.size()) && rclcpp::ok(); ++i) {
+    for (unsigned long int i = 0; (i < goal->trajectory.size()) && rclcpp::ok(); ++i) {
       // Check if there is a cancel request
       if (goal_handle->is_canceling()) {
         result->success = false;
@@ -75,6 +141,12 @@ private:
         RCLCPP_INFO(this->get_logger(), "Goal canceled");
         return;
       }
+
+      auto &q = goal->trajectory[i];
+      auto u = lqr_control_input(goal->trajectory[i], q, 0.1);
+      auto v = u.first;
+      auto w = u.second;
+
       // Update feedback
       trajectory_points_remaining = goal->trajectory.size() - i;
       // Publish feedback
@@ -92,6 +164,7 @@ private:
     }
   }
 };  // class ControllerActionServer
+
 
 }  // namespace ddbot_controller
 

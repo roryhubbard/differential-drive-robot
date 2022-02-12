@@ -18,7 +18,7 @@ class ControllerActionClient : public rclcpp::Node
 {
 public:
   using TrackTrajectory = ddbot_msgs::action::TrackTrajectory;
-  using GoalHandleFollowPath = rclcpp_action::ClientGoalHandle<TrackTrajectory>;
+  using GoalHandleTrackTrajectory = rclcpp_action::ClientGoalHandle<TrackTrajectory>;
 
   explicit ControllerActionClient(const rclcpp::NodeOptions & options)
   : Node("controller_action_client", options)
@@ -81,7 +81,7 @@ private:
   rclcpp_action::Client<TrackTrajectory>::SharedPtr client_ptr_;
   rclcpp::TimerBase::SharedPtr timer_;
 
-  void goal_response_callback(std::shared_future<GoalHandleFollowPath::SharedPtr> future)
+  void goal_response_callback(std::shared_future<GoalHandleTrackTrajectory::SharedPtr> future)
   {
     auto goal_handle = future.get();
     if (!goal_handle) {
@@ -92,7 +92,7 @@ private:
   }
 
   void feedback_callback(
-    GoalHandleFollowPath::SharedPtr,
+    GoalHandleTrackTrajectory::SharedPtr,
     const std::shared_ptr<const TrackTrajectory::Feedback> feedback)
   {
     std::stringstream ss;
@@ -101,7 +101,7 @@ private:
     RCLCPP_INFO(this->get_logger(), ss.str().c_str());
   }
 
-  void result_callback(const GoalHandleFollowPath::WrappedResult & result)
+  void result_callback(const GoalHandleTrackTrajectory::WrappedResult & result)
   {
     switch (result.code) {
       case rclcpp_action::ResultCode::SUCCEEDED:
