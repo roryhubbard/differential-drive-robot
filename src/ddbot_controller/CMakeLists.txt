@@ -11,9 +11,12 @@ find_package(ddbot_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_components REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 add_library(action_server SHARED
   src/controller_action_server.cpp)
+
 target_include_directories(action_server PRIVATE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
@@ -21,7 +24,9 @@ ament_target_dependencies(action_server
   "ddbot_msgs"
   "rclcpp"
   "rclcpp_action"
-  "rclcpp_components")
+  "rclcpp_components"
+  "tf2_geometry_msgs"
+  "Eigen3")
 rclcpp_components_register_node(action_server PLUGIN "ddbot_controller::ControllerActionServer" EXECUTABLE controller_action_server)
 install(TARGETS
   action_server
