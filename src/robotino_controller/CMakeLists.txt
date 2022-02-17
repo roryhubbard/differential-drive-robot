@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(ddbot_controller)
+project(robotino_controller)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -7,7 +7,9 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(ddbot_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(robotino_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_components REQUIRED)
@@ -21,13 +23,14 @@ target_include_directories(action_server PRIVATE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 ament_target_dependencies(action_server
-  "ddbot_msgs"
+  "nav_msgs"
+  "robotino_msgs"
   "rclcpp"
   "rclcpp_action"
   "rclcpp_components"
   "tf2_geometry_msgs"
   "Eigen3")
-rclcpp_components_register_node(action_server PLUGIN "ddbot_controller::ControllerActionServer" EXECUTABLE controller_action_server)
+rclcpp_components_register_node(action_server PLUGIN "robotino_controller::ControllerActionServer" EXECUTABLE controller_action_server)
 install(TARGETS
   action_server
   ARCHIVE DESTINATION lib
@@ -40,12 +43,13 @@ target_include_directories(action_client PRIVATE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 ament_target_dependencies(action_client
+  "nav_msgs"
   "geometry_msgs"
-  "ddbot_msgs"
+  "robotino_msgs"
   "rclcpp"
   "rclcpp_action"
   "rclcpp_components")
-rclcpp_components_register_node(action_client PLUGIN "ddbot_controller::ControllerActionClient" EXECUTABLE controller_action_client)
+rclcpp_components_register_node(action_client PLUGIN "robotino_controller::ControllerActionClient" EXECUTABLE controller_action_client)
 install(TARGETS
   action_client
   ARCHIVE DESTINATION lib

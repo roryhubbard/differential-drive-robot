@@ -5,19 +5,20 @@
 #include <sstream>
 #include <vector>
 
-#include "geometry_msgs/msg/pose.hpp"
-#include "ddbot_msgs/action/track_trajectory.hpp"
+#include "nav_msgs/msg/odometry.hpp"
+#include "geometry_msgs/msg/pose_with_covariance.hpp"
+#include "robotino_msgs/action/track_trajectory.hpp"
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "rclcpp_components/register_node_macro.hpp"
 
-namespace ddbot_controller
+namespace robotino_controller
 {
 class ControllerActionClient : public rclcpp::Node
 {
 public:
-  using TrackTrajectory = ddbot_msgs::action::TrackTrajectory;
+  using TrackTrajectory = robotino_msgs::action::TrackTrajectory;
   using GoalHandleTrackTrajectory = rclcpp_action::ClientGoalHandle<TrackTrajectory>;
 
   explicit ControllerActionClient(const rclcpp::NodeOptions & options)
@@ -44,23 +45,23 @@ public:
       rclcpp::shutdown();
     }
 
-    auto pose1 = geometry_msgs::msg::Pose();
-    pose1.position.x = 1.0;
-    pose1.position.y = 1.0;
-    pose1.position.z = 1.0;
-    auto tps1 = ddbot_msgs::msg::TrajectoryPointStamped();
-    tps1.trajectory_point.pose = pose1;
+    auto pose1 = geometry_msgs::msg::PoseWithCovariance();
+    pose1.pose.position.x = 1.0;
+    pose1.pose.position.y = 1.0;
+    pose1.pose.position.z = 1.0;
+    auto odom1 = nav_msgs::msg::Odometry();
+    odom1.pose = pose1;
 
-    auto pose2 = geometry_msgs::msg::Pose();
-    pose2.position.x = 2.0;
-    pose2.position.y = 2.0;
-    pose2.position.z = 2.0;
-    auto tps2 = ddbot_msgs::msg::TrajectoryPointStamped();
-    tps2.trajectory_point.pose = pose2;
+    auto pose2 = geometry_msgs::msg::PoseWithCovariance();
+    pose2.pose.position.x = 2.0;
+    pose2.pose.position.y = 2.0;
+    pose2.pose.position.z = 2.0;
+    auto odom2 = nav_msgs::msg::Odometry();
+    odom2.pose = pose2;
 
-    std::vector<ddbot_msgs::msg::TrajectoryPointStamped> trajectory;
-    trajectory.push_back(tps1);
-    trajectory.push_back(tps2);
+    std::vector<nav_msgs::msg::Odometry> trajectory;
+    trajectory.push_back(odom1);
+    trajectory.push_back(odom2);
 
     auto goal_msg = TrackTrajectory::Goal();
     goal_msg.trajectory = trajectory;
@@ -124,6 +125,6 @@ private:
   }
 };  // class ControllerActionClient
 
-}  // namespace ddbot_controller
+}  // namespace robotino_controller
 
-RCLCPP_COMPONENTS_REGISTER_NODE(ddbot_controller::ControllerActionClient)
+RCLCPP_COMPONENTS_REGISTER_NODE(robotino_controller::ControllerActionClient)

@@ -1,4 +1,4 @@
-ddbot_msgs/TrajectoryPointStamped[] trajectory
+nav_msgs/Odometry[] trajectory
 ---
 bool success
 ---

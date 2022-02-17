@@ -1,8 +1,8 @@
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Point
-from ddbot_msgs.msg import TrajectoryPointStamped
-from ddbot_msgs.srv import GetTrajectory
+from nav_msgs.msg import Odometry
+from robotino_msgs.srv import GetTrajectory
 
 
 class PlannerClient(Node):
@@ -15,12 +15,12 @@ class PlannerClient(Node):
     self.req = GetTrajectory.Request()
 
   def send_request(self):
-    start = TrajectoryPointStamped()
+    start = Odometry()
     start_point = Point(x=-2., y=-2., z=0.)
-    start.trajectory_point.pose.position = start_point
-    goal = TrajectoryPointStamped()
+    start.pose.pose.position = start_point
+    goal = Odometry()
     goal_point = Point(x=2., y=2., z=0.)
-    goal.trajectory_point.pose.position = goal_point
+    goal.pose.pose.position = goal_point
 
     self.req.start = start
     self.req.goal = goal

@@ -9,17 +9,18 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "rclcpp_components/register_node_macro.hpp"
+#include "nav_msgs/msg/odometry.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
-#include "ddbot_msgs/action/track_trajectory.hpp"
-#include "ddbot_controller/linear_quadratic_regulator.hpp"
+#include "robotino_msgs/action/track_trajectory.hpp"
+#include "robotino_controller/linear_quadratic_regulator.hpp"
 
-namespace ddbot_controller
+namespace robotino_controller
 {
 
 class ControllerActionServer : public rclcpp::Node
 {
 public:
-  using TrackTrajectory = ddbot_msgs::action::TrackTrajectory;
+  using TrackTrajectory = robotino_msgs::action::TrackTrajectory;
   using GoalHandleTrackTrajectory = rclcpp_action::ServerGoalHandle<TrackTrajectory>;
 
   explicit ControllerActionServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions())
@@ -73,16 +74,15 @@ private:
     return R * x;
   }
 
-  Eigen::Vector3d msg_to_state_vector(const ddbot_msgs::msg::TrajectoryPointStamped &tps)
+  Eigen::Vector3d msg_to_state_vector(const nav_msgs::msg::Odometry &odometry)
   {
-    const auto tp = tps.trajectory_point;
-    const auto x = tp.pose.position.x;
-    const auto y = tp.pose.position.y;
+    const auto x = odometry.pose.pose.position.x;
+    const auto y = odometry.pose.pose.position.y;
     const tf2::Quaternion quatr(
-      tp.pose.orientation.x,
-      tp.pose.orientation.y,
-      tp.pose.orientation.z,
-      tp.pose.orientation.w);
+      odometry.pose.pose.orientation.x,
+      odometry.pose.pose.orientation.y,
+      odometry.pose.pose.orientation.z,
+      odometry.pose.pose.orientation.w);
     tf2::Matrix3x3 m(quatr);
     double roll, pitch, yaw;
     m.getRPY(roll, pitch, yaw);
@@ -90,18 +90,18 @@ private:
   }
 
   std::pair<double, double> lqr_control_input(
-    const ddbot_msgs::msg::TrajectoryPointStamped &reference_state,
-    const ddbot_msgs::msg::TrajectoryPointStamped &current_state,
+    const nav_msgs::msg::Odometry &reference_odom,
+    const nav_msgs::msg::Odometry &current_odom,
     const double &t)
   {
-    const auto qr = msg_to_state_vector(reference_state);
-    const auto q = msg_to_state_vector(current_state);
+    const auto qr = msg_to_state_vector(reference_odom);
+    const auto q = msg_to_state_vector(current_odom);
     const auto e = express_in_rotated_frame(qr - q, q(3));
 
-    const auto xr = reference_state.trajectory_point.twist.linear.x;
-    const auto yr = reference_state.trajectory_point.twist.linear.y;
+    const auto xr = reference_odom.twist.twist.linear.x;
+    const auto yr = reference_odom.twist.twist.linear.y;
     const auto vr = std::hypot(xr, yr);
-    const auto wr = reference_state.trajectory_point.twist.angular.z;
+    const auto wr = reference_odom.twist.twist.angular.z;
 
     Eigen::Matrix3d A; 
     A << 1., wr*t,   0.,
@@ -142,10 +142,11 @@ private:
         return;
       }
 
-      auto &q = goal->trajectory[i];
-      auto u = lqr_control_input(goal->trajectory[i], q, 0.1);
-      auto v = u.first;
-      auto w = u.second;
+      // TODO: make this work
+     // auto &q = goal->trajectory[i];
+     // auto u = lqr_control_input(goal->trajectory[i], q, 0.1);
+     // auto v = u.first;
+     // auto w = u.second;
 
       // Update feedback
       trajectory_points_remaining = goal->trajectory.size() - i;
@@ -166,6 +167,6 @@ private:
 };  // class ControllerActionServer
 
 
-}  // namespace ddbot_controller
+}  // namespace robotino_controller
 
-RCLCPP_COMPONENTS_REGISTER_NODE(ddbot_controller::ControllerActionServer)
+RCLCPP_COMPONENTS_REGISTER_NODE(robotino_controller::ControllerActionServer)

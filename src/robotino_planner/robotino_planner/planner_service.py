@@ -1,9 +1,9 @@
 import numpy as np
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import Point, Pose, Twist
-from ddbot_msgs.msg import TrajectoryPointStamped
-from ddbot_msgs.srv import GetTrajectory
+from nav_msgs.msg import Odometry
+from geometry_msgs.msg import Point, PoseWithCovariance, TwistWithCovariance
+from robotino_msgs.srv import GetTrajectory
 from tf_transformations import quaternion_from_euler, euler_from_quaternion
 from .diff_drive_planner import DiffDrivePlanner
 
@@ -20,15 +20,15 @@ class PlannerService(Node):
     return self.hack_plan(request, response)
 
   def hack_plan(self, request, response):
-    pi = request.start.trajectory_point.pose.position
-    qi = request.start.trajectory_point.pose.orientation
-    vi = request.start.trajectory_point.twist.linear
-    wi = request.start.trajectory_point.twist.angular
+    pi = request.start.pose.pose.position
+    qi = request.start.pose.pose.orientation
+    vi = request.start.twist.twist.linear
+    wi = request.start.twist.twist.angular
 
-    pf = request.goal.trajectory_point.pose.position
-    qf = request.goal.trajectory_point.pose.orientation
-    vf = request.goal.trajectory_point.twist.linear
-    wf = request.goal.trajectory_point.twist.angular
+    pf = request.goal.pose.pose.position
+    qf = request.goal.pose.pose.orientation
+    vf = request.goal.twist.twist.linear
+    wf = request.goal.twist.twist.angular
 
     _rolli, _pitchi, yawi = euler_from_quaternion([qi.x, qi.y, qi.z, qi.w])
     _rollf, _pitchf, yawf = euler_from_quaternion([qf.x, qf.y, qf.z, qf.w])
@@ -68,24 +68,24 @@ class PlannerService(Node):
       v = ddp.recover_longitudinal_velocity(t)
       w = ddp.recover_angular_velocity(t)
 
-      pose = Pose()
-      pose.position = Point(x=x, y=y, z=0.)
+      pose = PoseWithCovariance()
+      pose.pose.position = Point(x=x, y=y, z=0.)
       q = quaternion_from_euler(0, 0, yaw)
-      pose.orientation.x = q[0]
-      pose.orientation.y = q[1]
-      pose.orientation.z = q[2]
-      pose.orientation.w = q[3]
+      pose.pose.orientation.x = q[0]
+      pose.pose.orientation.y = q[1]
+      pose.pose.orientation.z = q[2]
+      pose.pose.orientation.w = q[3]
 
-      twist = Twist()
-      twist.linear.x = v * np.cos(yaw)
-      twist.linear.y = v * np.sin(yaw)
-      twist.angular.z = w
+      twist = TwistWithCovariance()
+      twist.twist.linear.x = v * np.cos(yaw)
+      twist.twist.linear.y = v * np.sin(yaw)
+      twist.twist.angular.z = w
 
-      tps = TrajectoryPointStamped()
-      tps.trajectory_point.pose = pose
-      tps.trajectory_point.twist = twist
+      odometry = Odometry()
+      odometry.pose = pose
+      odometry.twist = twist
 
-      response.trajectory.append(tps)
+      response.trajectory.append(odometry)
 
     return response
 
