@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = 'robotino_planner'
+package_name = 'robotino_planning'
 
 setup(
     name=package_name,
@@ -20,8 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'planner_service = robotino_planner.planner_service:main',
-            'planner_client = robotino_planner.planner_client:main',
+            'planning_service = robotino_planning.planning_service:main',
+            'planning_client = robotino_planning.planning_client:main',
         ],
     },
 )

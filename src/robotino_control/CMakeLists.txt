@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(robotino_controller)
+project(robotino_control)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -17,7 +17,7 @@ find_package(tf2_geometry_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 add_library(action_server SHARED
-  src/controller_action_server.cpp)
+  src/control_action_server.cpp)
 
 target_include_directories(action_server PRIVATE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -30,7 +30,7 @@ ament_target_dependencies(action_server
   "rclcpp_components"
   "tf2_geometry_msgs"
   "Eigen3")
-rclcpp_components_register_node(action_server PLUGIN "robotino_controller::ControllerActionServer" EXECUTABLE controller_action_server)
+rclcpp_components_register_node(action_server PLUGIN "robotino_control::ControllerActionServer" EXECUTABLE control_action_server)
 install(TARGETS
   action_server
   ARCHIVE DESTINATION lib
@@ -38,7 +38,7 @@ install(TARGETS
   RUNTIME DESTINATION bin)
 
 add_library(action_client SHARED
-  src/controller_action_client.cpp)
+  src/control_action_client.cpp)
 target_include_directories(action_client PRIVATE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
@@ -49,7 +49,7 @@ ament_target_dependencies(action_client
   "rclcpp"
   "rclcpp_action"
   "rclcpp_components")
-rclcpp_components_register_node(action_client PLUGIN "robotino_controller::ControllerActionClient" EXECUTABLE controller_action_client)
+rclcpp_components_register_node(action_client PLUGIN "robotino_control::ControllerActionClient" EXECUTABLE control_action_client)
 install(TARGETS
   action_client
   ARCHIVE DESTINATION lib

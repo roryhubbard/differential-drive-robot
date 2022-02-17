@@ -8,15 +8,15 @@ from tf_transformations import quaternion_from_euler, euler_from_quaternion
 from .diff_drive_planner import DiffDrivePlanner
 
 
-class PlannerService(Node):
+class PlanningService(Node):
 
   def __init__(self):
-    super().__init__('planner_service')
+    super().__init__('planning_service')
     self.service = self.create_service(GetTrajectory, 'get_trajectory', self.get_trajectory)
 
   def get_trajectory(self, request, response):
     self.get_logger().info(
-      f'Planner request received with start point {request.start}, goal point {request.goal}')
+      f'Planning request received with start point {request.start}, goal point {request.goal}')
     return self.hack_plan(request, response)
 
   def hack_plan(self, request, response):
@@ -92,8 +92,8 @@ class PlannerService(Node):
 
 def main():
   rclpy.init()
-  planner_service = PlannerService()
-  rclpy.spin(planner_service)
+  planning_service = PlanningService()
+  rclpy.spin(planning_service)
   rclpy.shutdown()
 
 

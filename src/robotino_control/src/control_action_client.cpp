@@ -13,7 +13,7 @@
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "rclcpp_components/register_node_macro.hpp"
 
-namespace robotino_controller
+namespace robotino_control
 {
 class ControllerActionClient : public rclcpp::Node
 {
@@ -22,7 +22,7 @@ public:
   using GoalHandleTrackTrajectory = rclcpp_action::ClientGoalHandle<TrackTrajectory>;
 
   explicit ControllerActionClient(const rclcpp::NodeOptions & options)
-  : Node("controller_action_client", options)
+  : Node("control_action_client", options)
   {
     this->client_ptr_ = rclcpp_action::create_client<TrackTrajectory>(
       this,
@@ -125,6 +125,6 @@ private:
   }
 };  // class ControllerActionClient
 
-}  // namespace robotino_controller
+}  // namespace robotino_control
 
-RCLCPP_COMPONENTS_REGISTER_NODE(robotino_controller::ControllerActionClient)
+RCLCPP_COMPONENTS_REGISTER_NODE(robotino_control::ControllerActionClient)

@@ -5,10 +5,10 @@ from nav_msgs.msg import Odometry
 from robotino_msgs.srv import GetTrajectory
 
 
-class PlannerClient(Node):
+class PlanningClient(Node):
 
   def __init__(self):
-    super().__init__('planner_client')
+    super().__init__('planning_client')
     self.client = self.create_client(GetTrajectory, 'get_trajectory')
     while not self.client.wait_for_service(timeout_sec=1.0):
       self.get_logger().info('service not available, waiting again...')
@@ -30,22 +30,22 @@ class PlannerClient(Node):
 def main():
   rclpy.init()
 
-  planner_client = PlannerClient()
-  planner_client.send_request()
+  planning_client = PlanningClient()
+  planning_client.send_request()
 
   while rclpy.ok():
-    rclpy.spin_once(planner_client)
-    if planner_client.future.done():
+    rclpy.spin_once(planning_client)
+    if planning_client.future.done():
       try:
-        response = planner_client.future.result()
+        response = planning_client.future.result()
       except Exception as e:
-        planner_client.get_logger().info(
+        planning_client.get_logger().info(
           'Service call failed %r' % (e,))
       else:
-        planner_client.get_logger().info(response)
+        planning_client.get_logger().info(response)
     break
 
-  planner_client.destroy_node()
+  planning_client.destroy_node()
   rclpy.shutdown()
 
 

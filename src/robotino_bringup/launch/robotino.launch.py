@@ -14,8 +14,8 @@ def generate_launch_description():
         / 'launch' / 'ign_gazebo.launch.py'
     robotino_urdf = get_package_share_directory('robotino_description') \
         / 'urdf' / 'robotino.urdf'
-    pkg_robotino_planner = get_package_share_directory('robotino_planner')
-    pkg_robotino_controller = get_package_share_directory('robotino_controller')
+    pkg_robotino_planning = get_package_share_directory('robotino_planning')
+    pkg_robotino_control = get_package_share_directory('robotino_control')
 
     ign_gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(pkg_ros_ign_gazebo),
@@ -38,27 +38,27 @@ def generate_launch_description():
                     '-file', robotino_urdf,
                  output='screen')
 
-    planner_service = Node(
-        package='robotino_planner',
-        executable='planner_service',
+    planning_service = Node(
+        package='robotino_planning',
+        executable='planning_service',
         output='screen',
     )
 
-    planner_client = Node(
-        package='robotino_planner',
-        executable='planner_client',
+    planning_client = Node(
+        package='robotino_planning',
+        executable='planning_client',
         output='screen',
     )
 
-    controller_action_server = Node(
-        package='robotino_controller',
-        executable='controller_action_server',
+    control_action_server = Node(
+        package='robotino_control',
+        executable='control_action_server',
         output='screen',
     )
 
-    controller_action_client = Node(
-        package='robotino_controller',
-        executable='controller_action_client',
+    control_action_client = Node(
+        package='robotino_control',
+        executable='control_action_client',
         output='screen',
     )
 
@@ -73,10 +73,10 @@ def generate_launch_description():
     return LaunchDescription([
         ign_gazebo,
         spawn,
-        planner_service,
-        planner_client,
-        controller_action_server,
-        controller_action_client,
+        planning_service,
+        planning_client,
+        control_action_server,
+        control_action_client,
         bridge,
     ])
 

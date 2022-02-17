@@ -2,6 +2,8 @@
 
 #include <memory>
 
+namespace drake {
+namespace systems {
 namespace controllers {
 
 struct LinearQuadraticRegulatorResult {
@@ -9,6 +11,8 @@ struct LinearQuadraticRegulatorResult {
   Eigen::MatrixXd S;
 };
 
+// TODO(russt): Consider implementing the optional N argument as in the
+// continuous-time formulation.
 /// Computes the optimal feedback controller, u=-Kx, and the optimal
 /// cost-to-go J = x'Sx for the problem:
 ///
@@ -24,11 +28,14 @@ struct LinearQuadraticRegulatorResult {
 /// @returns A structure that contains the optimal feedback gain K and the
 /// quadratic cost term S. The optimal feedback control is u = -Kx;
 ///
+/// @throws std::exception if R is not positive definite.
+/// @ingroup control
 LinearQuadraticRegulatorResult DiscreteTimeLinearQuadraticRegulator(
     const Eigen::Ref<const Eigen::MatrixXd>& A,
     const Eigen::Ref<const Eigen::MatrixXd>& B,
     const Eigen::Ref<const Eigen::MatrixXd>& Q,
     const Eigen::Ref<const Eigen::MatrixXd>& R);
 
-} // namespace controller
-
+}  // namespace controllers
+}  // namespace systems
+}  // namespace drake

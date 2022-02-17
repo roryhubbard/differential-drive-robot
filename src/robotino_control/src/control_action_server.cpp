@@ -12,9 +12,9 @@
 #include "nav_msgs/msg/odometry.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "robotino_msgs/action/track_trajectory.hpp"
-#include "robotino_controller/linear_quadratic_regulator.hpp"
+#include "robotino_control/linear_quadratic_regulator.h"
 
-namespace robotino_controller
+namespace robotino_control
 {
 
 class ControllerActionServer : public rclcpp::Node
@@ -24,7 +24,7 @@ public:
   using GoalHandleTrackTrajectory = rclcpp_action::ServerGoalHandle<TrackTrajectory>;
 
   explicit ControllerActionServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions())
-  : Node("controller_action_server", options)
+  : Node("control_action_server", options)
   {
     using namespace std::placeholders;
 
@@ -114,7 +114,7 @@ private:
     Eigen::Matrix3d Q = Eigen::Matrix3d::Identity();
     Eigen::Matrix2d R = Eigen::Matrix2d::Identity();
 
-    const auto res = controllers::DiscreteTimeLinearQuadraticRegulator(A, B, Q, R);
+    const auto res = drake::systems::controllers::DiscreteTimeLinearQuadraticRegulator(A, B, Q, R);
     const auto K = res.K;
     const auto u = -K * e;
     const auto v = vr + std::cos(e(3)) + u(1);
@@ -167,6 +167,6 @@ private:
 };  // class ControllerActionServer
 
 
-}  // namespace robotino_controller
+}  // namespace robotino_control
 
-RCLCPP_COMPONENTS_REGISTER_NODE(robotino_controller::ControllerActionServer)
+RCLCPP_COMPONENTS_REGISTER_NODE(robotino_control::ControllerActionServer)

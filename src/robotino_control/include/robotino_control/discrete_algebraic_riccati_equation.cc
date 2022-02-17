@@ -1,10 +1,52 @@
-#include "ddbot_controller/discrete_algebraic_riccati_equation.h"
+#include "drake/math/discrete_algebraic_riccati_equation.h"
 
+namespace drake {
 namespace math {
-
+namespace {
+/* helper functions */
 template <typename T>
 int sgn(T val) {
   return (T(0) < val) - (val < T(0));
+}
+void check_stabilizable(const Eigen::Ref<const Eigen::MatrixXd>& A,
+                        const Eigen::Ref<const Eigen::MatrixXd>& B) {
+  // This function checks if (A,B) is a stabilizable pair.
+  // (A,B) is stabilizable if and only if the uncontrollable eigenvalues of
+  // A, if any, have absolute values less than one, where an eigenvalue is
+  // uncontrollable if Rank[lambda * I - A, B] < n.
+  int n = B.rows(), m = B.cols();
+  Eigen::EigenSolver<Eigen::MatrixXd> es(A);
+  for (int i = 0; i < n; i++) {
+    if (es.eigenvalues()[i].real() * es.eigenvalues()[i].real() +
+            es.eigenvalues()[i].imag() * es.eigenvalues()[i].imag() <
+        1)
+      continue;
+    Eigen::MatrixXcd E(n, n + m);
+    E << es.eigenvalues()[i] * Eigen::MatrixXcd::Identity(n, n) - A, B;
+    Eigen::ColPivHouseholderQR<Eigen::MatrixXcd> qr(E);
+    DRAKE_THROW_UNLESS(qr.rank() == n);
+    if (qr.rank() != n) {
+      throw std::runtime_error("not stabilizable");
+    }
+  }
+}
+void check_detectable(const Eigen::Ref<const Eigen::MatrixXd>& A,
+                      const Eigen::Ref<const Eigen::MatrixXd>& Q) {
+  // This function check if (A,C) is a detectable pair, where Q = C' * C.
+  // (A,C) is detectable if and only if the unobservable eigenvalues of A,
+  // if any, have absolute values less than one, where an eigenvalue is
+  // unobservable if Rank[lambda * I - A; C] < n.
+  // Also, (A,C) is detectable if and only if (A',C') is stabilizable.
+  int n = A.rows();
+  Eigen::LDLT<Eigen::MatrixXd> ldlt(Q);
+  Eigen::MatrixXd L = ldlt.matrixL();
+  Eigen::MatrixXd D = ldlt.vectorD();
+  Eigen::MatrixXd D_sqrt = Eigen::MatrixXd::Zero(n, n);
+  for (int i = 0; i < n; i++) {
+    D_sqrt(i, i) = sqrt(D(i));
+  }
+  Eigen::MatrixXd C = L * D_sqrt;
+  check_stabilizable(A.transpose(), C.transpose());
 }
 
 // "Givens rotation" computes an orthogonal 2x2 matrix R such that
@@ -339,6 +381,9 @@ void reorder_eigen(Eigen::Ref<Eigen::MatrixXd> S, Eigen::Ref<Eigen::MatrixXd> T,
  *
  * AᵀXA − X − AᵀXB(BᵀXB + R)⁻¹BᵀXA + Q = 0
  *
+ * @throws std::exception if Q is not positive semi-definite.
+ * @throws std::exception if R is not positive definite.
+ *
  * Based on the Schur Vector approach outlined in this paper:
  * "On the Numerical Solution of the Discrete-Time Algebraic Riccati Equation"
  * by Thrasyvoulos Pappas, Alan J. Laub, and Nils R. Sandell, in TAC, 1980,
@@ -350,6 +395,8 @@ void reorder_eigen(Eigen::Ref<Eigen::MatrixXd> S, Eigen::Ref<Eigen::MatrixXd> T,
  * is 10⁻⁶, while the absolute error of the solution computed by Matlab is
  * 10⁻⁸.
  *
+ * TODO(weiqiao.han): I may overwrite the RealQZ function to improve the
+ * accuracy, together with more thorough tests.
  */
 
 Eigen::MatrixXd DiscreteAlgebraicRiccatiEquation(
@@ -358,6 +405,9 @@ Eigen::MatrixXd DiscreteAlgebraicRiccatiEquation(
     const Eigen::Ref<const Eigen::MatrixXd>& Q,
     const Eigen::Ref<const Eigen::MatrixXd>& R) {
   int n = B.rows(), m = B.cols();
+
+  //check_stabilizable(A, B);
+  //check_detectable(A, Q);
 
   Eigen::MatrixXd M(2 * n, 2 * n), L(2 * n, 2 * n);
   M << A, Eigen::MatrixXd::Zero(n, n), -Q, Eigen::MatrixXd::Identity(n, n);
@@ -390,4 +440,4 @@ Eigen::MatrixXd DiscreteAlgebraicRiccatiEquation(
 }
 
 }  // namespace math
-
+}  // namespace drake
