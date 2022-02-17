@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<robot name="robotino" xmlns:xacro="http://wiki.ros.org/xacro">
+    <xacro:include filename="$(find robotino_description)/urdf/robotino_body.urdf.xacro"/>
+    <xacro:include filename="$(find robotino_description)/urdf/robotino_parts.urdf.xacro"/>
+    <xacro:include filename="$(find robotino_description)/urdf/sensors/kinect.urdf.xacro"/>
+    <!-- main robotino body -->
+    <xacro:robotino_body/>
+    <!-- add platform -->
+    <xacro:platform name="platform" parent="base_link">
+        <origin xyz="0.0 0.0 0.13" rpy="0 0 0"/>
+    </xacro:platform>
+    <!-- add kinect -->
+    <xacro:kinect name="kinect" parent="base_link">
+        <origin xyz="0.2 0.0 0.75"/>
+    </xacro:kinect>
+</robot>

@@ -1,0 +1,23 @@
+<?xml version='1.0'?>
+<ignition version='1.0'>
+
+  <plugin name="ignition::launch::GazeboFactory"
+    filename="ignition-launch-gazebo-factory">
+    <spawn>
+      <name>robotino</name>
+      <allow_renaming>true</allow_renaming>
+
+      <sdf version='1.6'>
+        <include>
+          <uri>/home/chub/repos/robotino-ros2/src/robotino_description/urdf/robotino.urdf</uri>
+        </include>
+      </sdf>
+
+    </spawn>
+  </plugin>
+
+  <executable name='gazebo-server'>
+    <command>ign gazebo empty.sdf</command>
+  </executable>
+
+</ignition>
