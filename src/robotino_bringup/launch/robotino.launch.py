@@ -1,24 +1,23 @@
-from ament_index_python.packages import get_package_share_directory
+from ament_index_python.packages import get_package_share_path
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
 from launch.actions import IncludeLaunchDescription
-from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+#from launch.substitutions import Command
 
 
 def generate_launch_description():
 
-    pkg_ros_ign_gazebo = get_package_share_directory('ros_ign_gazebo') \
+    ign_gazebo_launch = get_package_share_path('ros_ign_gazebo') \
         / 'launch' / 'ign_gazebo.launch.py'
-    robotino_urdf = get_package_share_directory('robotino_description') \
+    robotino_urdf = get_package_share_path('robotino_description') \
         / 'urdf' / 'robotino.urdf'
-    pkg_robotino_planning = get_package_share_directory('robotino_planning')
-    pkg_robotino_control = get_package_share_directory('robotino_control')
 
     ign_gazebo = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(pkg_ros_ign_gazebo),
+        PythonLaunchDescriptionSource(ign_gazebo_launch.as_posix()),
+        launch_arguments={
+            'ign_args': '-r empty.sdf'
+        }.items(),
     )
 
 #    path_to_urdf = get_package_share_path('pr2_description') / 'robots' / 'pr2.urdf.xacro'
@@ -32,11 +31,14 @@ def generate_launch_description():
 #        }]
 #    )
 
-    spawn = Node(package='ros_ign_gazebo', executable='create',
-                 arguments=[
-                    '-name', 'robotino',
-                    '-file', robotino_urdf,
-                 output='screen')
+    spawn = Node(
+        package='ros_ign_gazebo',
+        executable='create',
+        arguments=[
+           '-name', 'robotino',
+           '-file', robotino_urdf.as_posix()],
+        output='screen',
+    )
 
     planning_service = Node(
         package='robotino_planning',
