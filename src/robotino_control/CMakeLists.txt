@@ -8,7 +8,6 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(nav_msgs REQUIRED)
-find_package(geometry_msgs REQUIRED)
 find_package(robotino_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
@@ -33,25 +32,6 @@ ament_target_dependencies(action_server
 rclcpp_components_register_node(action_server PLUGIN "robotino_control::ControllerActionServer" EXECUTABLE control_action_server)
 install(TARGETS
   action_server
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin)
-
-add_library(action_client SHARED
-  src/control_action_client.cpp)
-target_include_directories(action_client PRIVATE
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
-ament_target_dependencies(action_client
-  "nav_msgs"
-  "geometry_msgs"
-  "robotino_msgs"
-  "rclcpp"
-  "rclcpp_action"
-  "rclcpp_components")
-rclcpp_components_register_node(action_client PLUGIN "robotino_control::ControllerActionClient" EXECUTABLE control_action_client)
-install(TARGETS
-  action_client
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin)

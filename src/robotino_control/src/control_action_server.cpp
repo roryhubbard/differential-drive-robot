@@ -91,7 +91,7 @@ private:
     tf2::Matrix3x3 m(quatr);
     double roll, pitch, yaw;
     m.getRPY(roll, pitch, yaw);
-    Eigen::Vector3d{x, y, yaw};
+    return Eigen::Vector3d{x, y, yaw};
   }
 
   std::pair<double, double> lqr_control_input(
@@ -175,7 +175,7 @@ private:
     }
   }
 
-  /// \brief Velocity command publisher
+  // brief Velocity command publisher
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_pub_;
 
 };  // class ControllerActionServer

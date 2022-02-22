@@ -21,7 +21,6 @@ setup(
     entry_points={
         'console_scripts': [
             'planning_service = robotino_planning.planning_service:main',
-            'planning_client = robotino_planning.planning_client:main',
         ],
     },
 )
