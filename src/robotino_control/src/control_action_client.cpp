@@ -34,7 +34,6 @@ public:
       std::bind(&ControllerActionClient::send_goal, this));
   }
 
-  //void send_goal(TrackTrajectory::Goal goal_msg)
   void send_goal()
   {
     using namespace std::placeholders;
