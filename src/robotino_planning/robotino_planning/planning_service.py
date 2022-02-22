@@ -16,7 +16,7 @@ class PlanningService(Node):
 
   def get_trajectory(self, request, response):
     self.get_logger().info(
-      f'Planning request received with start point {request.start}, goal point {request.goal}')
+      f'Planning request received with start point {request.start.pose.pose.position}, goal point {request.goal.pose.pose.position}')
     return self.hack_plan(request, response)
 
   def hack_plan(self, request, response):
@@ -98,3 +98,4 @@ def main():
 
 if __name__ == '__main__':
   main()
+

@@ -10,6 +10,7 @@
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "rclcpp_components/register_node_macro.hpp"
 #include "nav_msgs/msg/odometry.hpp"
+#include "geometry_msgs/msg/twist.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "robotino_msgs/action/track_trajectory.hpp"
 #include "robotino_control/linear_quadratic_regulator.h"
@@ -34,6 +35,10 @@ public:
       std::bind(&ControllerActionServer::handle_goal, this, _1, _2),
       std::bind(&ControllerActionServer::handle_cancel, this, _1),
       std::bind(&ControllerActionServer::handle_accepted, this, _1));
+
+    auto default_qos = rclcpp::QoS(rclcpp::SystemDefaultsQoS());
+    cmd_pub_ = this->create_publisher<geometry_msgs::msg::Twist>(
+        "/model/robotino/cmd_vel", default_qos);
   }
 
 private:
@@ -44,7 +49,7 @@ private:
     std::shared_ptr<const TrackTrajectory::Goal> goal)
   {
     RCLCPP_INFO(this->get_logger(),
-                "Received follow path request with path size %lu", goal->trajectory.size());
+                "Received track trajectory request with path size %lu", goal->trajectory.size());
     (void)uuid;
     return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
   }
@@ -126,7 +131,7 @@ private:
   void execute(const std::shared_ptr<GoalHandleTrackTrajectory> goal_handle)
   {
     RCLCPP_INFO(this->get_logger(), "Executing goal");
-    rclcpp::Rate loop_rate(1);
+    rclcpp::Rate loop_rate(10);
     const auto goal = goal_handle->get_goal();
     auto feedback = std::make_shared<TrackTrajectory::Feedback>();
     auto & trajectory_points_remaining = feedback->trajectory_points_remaining;
@@ -148,11 +153,17 @@ private:
      // auto v = u.first;
      // auto w = u.second;
 
+      auto cmd_msg = std::make_unique<geometry_msgs::msg::Twist>();
+      cmd_msg->linear.x = goal->trajectory[i].twist.twist.linear.x;
+      cmd_msg->angular.z = goal->trajectory[i].twist.twist.angular.z;
+
+      cmd_pub_->publish(std::move(cmd_msg));
+
       // Update feedback
       trajectory_points_remaining = goal->trajectory.size() - i;
       // Publish feedback
       goal_handle->publish_feedback(feedback);
-      RCLCPP_INFO(this->get_logger(), "Publish feedback");
+      RCLCPP_INFO(this->get_logger(), "Publishing feedback");
 
       loop_rate.sleep();
     }
@@ -164,6 +175,10 @@ private:
       RCLCPP_INFO(this->get_logger(), "Goal succeeded");
     }
   }
+
+  /// \brief Velocity command publisher
+  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_pub_;
+
 };  // class ControllerActionServer
 
 

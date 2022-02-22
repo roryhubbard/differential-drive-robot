@@ -64,6 +64,12 @@ def generate_launch_description():
         output='screen',
     )
 
+    autonomy = Node(
+        package='robotino_autonomy',
+        executable='autonomy',
+        output='screen',
+    )
+
     bridge = Node(
         package='ros_ign_bridge',
         executable='parameter_bridge',
@@ -76,9 +82,10 @@ def generate_launch_description():
         ign_gazebo,
         spawn,
         planning_service,
-        planning_client,
+        #planning_client,
         control_action_server,
-        control_action_client,
+        #control_action_client,
+        autonomy,
         bridge,
     ])
 
