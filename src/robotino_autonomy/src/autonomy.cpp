@@ -59,7 +59,7 @@ void result_callback(
   }
   RCLCPP_INFO(
       node->get_logger(),
-      "Result received: %d",
+      "Result received: success = %d",
       result.result->success);
   rclcpp::shutdown();
 }
@@ -116,7 +116,7 @@ int main(int argc, char **argv)
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "service not available, waiting again...");
   }
 
-  // Wait for the result.
+  // Wait for the result
   auto planning_result_future = planning_client->async_send_request(request);
   if (rclcpp::spin_until_future_complete(node, planning_result_future) !=
     rclcpp::FutureReturnCode::SUCCESS)
@@ -127,13 +127,29 @@ int main(int argc, char **argv)
 
   auto goal_msg = TrackTrajectory::Goal();
   goal_msg.trajectory = planning_result_future.get()->trajectory;
-  auto control_result_future = send_goal(control_client, goal_msg);
 
-  RCLCPP_INFO(node->get_logger(), "Waiting for result");
-  if (rclcpp::spin_until_future_complete(node, control_result_future) !=
+  auto goal_handle_future = send_goal(control_client, goal_msg);
+
+  if (rclcpp::spin_until_future_complete(node, goal_handle_future) !=
     rclcpp::FutureReturnCode::SUCCESS)
   {
-    RCLCPP_ERROR(node->get_logger(), "action client get_result call failed on track_trajectory");
+    RCLCPP_ERROR(node->get_logger(), "send goal call failed on track_trajectory");
+    return 1;
+  }
+
+  GoalHandleTrackTrajectory::SharedPtr goal_handle = goal_handle_future.get();
+  if (!goal_handle) {
+    RCLCPP_ERROR(node->get_logger(), "goal was rejected by control action server");
+    return 1;
+  }
+
+  // Wait for the server to be done with the goal
+  auto result_future = control_client->async_get_result(goal_handle);
+
+  if (rclcpp::spin_until_future_complete(node, result_future) !=
+    rclcpp::FutureReturnCode::SUCCESS)
+  {
+    RCLCPP_ERROR(node->get_logger(), "get result call failed on track_trajectory");
     return 1;
   }
 

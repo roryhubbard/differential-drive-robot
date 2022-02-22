@@ -163,7 +163,6 @@ private:
       trajectory_points_remaining = goal->trajectory.size() - i;
       // Publish feedback
       goal_handle->publish_feedback(feedback);
-      RCLCPP_INFO(this->get_logger(), "Publishing feedback");
 
       loop_rate.sleep();
     }
