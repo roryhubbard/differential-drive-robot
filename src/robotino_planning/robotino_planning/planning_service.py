@@ -77,8 +77,7 @@ class PlanningService(Node):
       pose.pose.orientation.w = q[3]
 
       twist = TwistWithCovariance()
-      twist.twist.linear.x = v * np.cos(yaw)
-      twist.twist.linear.y = v * np.sin(yaw)
+      twist.twist.linear.x = v
       twist.twist.angular.z = w
 
       odometry = Odometry()
