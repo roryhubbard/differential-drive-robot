@@ -19,7 +19,7 @@ class DiffDrivePlanner(PiecewisePolynomial):
         x = self.spline_coeffs[s][z]
         self.cost += (1/2) * cp.quad_form(x, P)
 
-  def add_obstacle(self, vertices, checkpoints, bigM=10, buffer=0):
+  def add_obstacle(self, vertices, checkpoints, bigM, ob_buffer=0):
     """
     vertices: list(tuple(float)) = coordinates specifying vertices of obstacle
       - counterclockwise ordering and closed (first element == last elements)
@@ -28,22 +28,19 @@ class DiffDrivePlanner(PiecewisePolynomial):
     z = cp.Variable((checkpoints.size, len(vertices)-1), boolean=True)
     A = []
     b = []
-
     for i in range(len(vertices)-1):
       v1 = vertices[i]
       v2 = vertices[i+1]
       a = get_orthoganal_vector(v2 - v1)
       A.append(a)
       b.append(a @ v1)
-
     A = np.asarray(A)
     b = np.asarray(b)
-
-    for t in checkpoints:
+    for i, t in enumerate(checkpoints):
       flats = cp.vstack(self.eval(t, 0))
-      bigM_rhs = cp.vstack(b + z[t] * bigM - buffer)
+      bigM_rhs = cp.vstack(b + z[i] * bigM - ob_buffer)
       self.constraints += [A @ flats <= bigM_rhs,
-                           cp.sum(z[t]) <= len(vertices) - 2]
+                           cp.sum(z[i]) <= len(vertices) - 2]
 
   def recover_yaw(self, t):
     xdot, ydot = self.eval(t, 1)

@@ -8,6 +8,10 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 
+#include "nav_msgs/msg/odometry.hpp"
+#include "geometry_msgs/msg/polygon.hpp"
+#include "geometry_msgs/msg/point32.hpp"
+
 #include "robotino_msgs/action/track_trajectory.hpp"
 #include "robotino_msgs/srv/get_trajectory.hpp"
 
@@ -84,6 +88,42 @@ std::shared_future<GoalHandleTrackTrajectory::SharedPtr> send_goal(
 }
 
 
+geometry_msgs::msg::Polygon generate_rectangle(
+    const float& cx,
+    const float& cy,
+    const float& width,
+    const float& height)
+{
+  auto square = geometry_msgs::msg::Polygon();
+  const auto hw = width / 2.;
+  const auto hh = height / 2.;
+
+  auto top_right = geometry_msgs::msg::Point32();
+  top_right.x = cx + hw;
+  top_right.y = cy + hh;
+
+  auto top_left = geometry_msgs::msg::Point32();
+  top_left.x = cx - hw;
+  top_left.y = cy + hh;
+
+  auto bottom_left = geometry_msgs::msg::Point32();
+  bottom_left.x = cx - hw;
+  bottom_left.y = cy - hh;
+
+  auto bottom_right = geometry_msgs::msg::Point32();
+  bottom_right.x = cx + hw;
+  bottom_right.y = cy - hh;
+
+  square.points.push_back(top_right);
+  square.points.push_back(top_left);
+  square.points.push_back(bottom_left);
+  square.points.push_back(bottom_right);
+  square.points.push_back(top_right);
+
+  return square;
+}
+
+
 int main(int argc, char **argv)
 {
   rclcpp::init(argc, argv);
@@ -96,16 +136,46 @@ int main(int argc, char **argv)
   rclcpp_action::Client<TrackTrajectory>::SharedPtr control_client =
     rclcpp_action::create_client<TrackTrajectory>(node, "track_trajectory");
 
-  auto start = nav_msgs::msg::Odometry();
-  start.pose.pose.position.x = -2.;
-  start.pose.pose.position.y = -2.;
-  auto goal = nav_msgs::msg::Odometry();
-  goal.pose.pose.position.x = 2.;
-  goal.pose.pose.position.y = 2.;
+  auto start_odometry = nav_msgs::msg::Odometry();
+  start_odometry.pose.pose.position.x = -6.;
+  start_odometry.pose.pose.position.y = 0.;
+
+  auto go1 = nav_msgs::msg::Odometry();
+  go1.pose.pose.position.x = -3;
+  go1.pose.pose.position.y = 0.;
+
+  auto go2 = nav_msgs::msg::Odometry();
+  go2.pose.pose.position.x = 0.;
+  go2.pose.pose.position.y = 0.;
+
+  auto go3 = nav_msgs::msg::Odometry();
+  go3.pose.pose.position.x = 3.;
+  go3.pose.pose.position.y = 0.;
+
+  auto go4 = nav_msgs::msg::Odometry();
+  go4.pose.pose.position.x = 6.;
+  go4.pose.pose.position.y = 0.;
+
+  //std::vector<nav_msgs::msg::Odometry> goal_odometries = {go1, go2};
+  //std::vector<int64_t> goal_times = {2, 4};
+  std::vector<nav_msgs::msg::Odometry> goal_odometries = {go1, go2, go3, go4};
+  std::vector<int64_t> goal_times = {2, 4, 6, 8};
+
+  const float height = 2.0;
+  const float width = 2.0;
+  const auto ob1 = generate_rectangle(-4.5, 0., width, height);
+  const auto ob2 = generate_rectangle(-1.5, 0., width, height);
+  const auto ob3 = generate_rectangle(1.5, 0., width, height);
+  const auto ob4 = generate_rectangle(4.5, 0., width, height);
+
+  std::vector<geometry_msgs::msg::Polygon> obstacles = {ob1, ob2, ob3, ob4};
 
   auto request = std::make_shared<robotino_msgs::srv::GetTrajectory::Request>();
-  request->start = start;
-  request->goal = goal;
+  request->start_odometry = start_odometry;
+  request->goal_odometries = goal_odometries;
+  request->goal_times = goal_times;
+  request->obstacles = obstacles;
+  request->control_frequency = 10;
 
   while (!planning_client->wait_for_service(1s)) {
     if (!rclcpp::ok()) {

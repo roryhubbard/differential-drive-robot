@@ -1,5 +1,15 @@
-nav_msgs/Odometry start
-nav_msgs/Odometry goal
+nav_msgs/Odometry start_odometry
+
+# following 2 arrays must be of equal length
+# array sizes will be 1 for standard A to B planning problem
+nav_msgs/Odometry[] goal_odometries
+int64[] goal_times
+
+geometry_msgs/Polygon[] obstacles
+
+int64 control_frequency # Hz
+
 ---
+
 nav_msgs/Odometry[] trajectory
 

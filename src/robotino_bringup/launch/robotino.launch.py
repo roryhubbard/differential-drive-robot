@@ -11,7 +11,7 @@ def generate_launch_description():
     ign_gazebo_launch = get_package_share_path('ros_ign_gazebo') \
         / 'launch' / 'ign_gazebo.launch.py'
     robotino_urdf = get_package_share_path('robotino_description') \
-        / 'urdf' / 'robotino.urdf'
+        / 'urdf' / 'robotino_platform.urdf'
 
     ign_gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(ign_gazebo_launch.as_posix()),

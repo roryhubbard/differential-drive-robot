@@ -29,12 +29,10 @@ class PiecewisePolynomial:
   def _add_continuity_constraints(self):
     for s in range(self.ns-1):
       h = self.ts[s+1] - self.ts[s]
-
       for z in range(self.nflats):
         for sd in range(self.smoothness_degree+1):
           spline_end = self._eval_spline(h, sd, self.spline_coeffs[s][z])
-          next_spline_start = self.spline_coeffs[s+1][z, sd] * factorial(sd)
-
+          next_spline_start = self._eval_spline(0, sd, self.spline_coeffs[s+1][z])
           self.constraints += [spline_end == next_spline_start]
 
   def add_constraint(self, t, derivative_order, bounds, equality=False):
@@ -44,6 +42,26 @@ class PiecewisePolynomial:
     bounds = np.asarray(bounds).reshape(-1, 1)
     flats = cp.vstack(self.eval(t, derivative_order))
     self.constraints += [flats == bounds] if equality else [flats <= bounds]
+
+  def _eval_spline_simple(self, t, derivative_order, coefficients):
+    if derivative_order == 0:
+      equation = np.array([1, t, t**2, t**3, t**4, t**5])
+    elif derivative_order == 1:
+      equation = np.array([0, 1, 2*t, 3*t**2, 4*t**3, 5*t**4])
+    elif derivative_order == 2:
+      equation = np.array([0, 0, 2, 6*t, 12*t**2, 20*t**3])
+    elif derivative_order == 3:
+      equation = np.array([0, 0, 0, 6, 24*t, 60*t**2])
+    elif derivative_order == 4:
+      equation = np.array([0, 0, 0, 0, 24, 120*t])
+    elif derivative_order == 5:
+      equation = np.array([0, 0, 0, 0, 0, 120])
+    elif derivative_order == 6:
+      equation = np.array([0, 0, 0, 0, 0, 0])
+    else:
+      print("derivative order is too high")
+      return
+    return equation[:self.poly_degree+1] @ coefficients
 
   def _eval_spline(self, h, d, c):
     """
