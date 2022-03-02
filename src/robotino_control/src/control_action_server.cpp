@@ -24,7 +24,7 @@ public:
   using TrackTrajectory = robotino_msgs::action::TrackTrajectory;
   using GoalHandleTrackTrajectory = rclcpp_action::ServerGoalHandle<TrackTrajectory>;
 
-  explicit ControllerActionServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions())
+  explicit ControllerActionServer(const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
   : Node("control_action_server", options)
   {
     using namespace std::placeholders;
@@ -48,8 +48,13 @@ private:
     const rclcpp_action::GoalUUID & uuid,
     std::shared_ptr<const TrackTrajectory::Goal> goal)
   {
-    RCLCPP_INFO(this->get_logger(),
-                "Received track trajectory request with path size %lu", goal->trajectory.size());
+    RCLCPP_INFO(
+      this->get_logger(),
+      "Received track trajectory request with path size %lu, nonholonomic: %d",
+      goal->trajectory.size(),
+      goal->nonholonomic
+    );
+    nonholonomic = goal->nonholonomic;
     (void)uuid;
     return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
   }
@@ -101,7 +106,7 @@ private:
   {
     const auto qr = msg_to_state_vector(reference_odom);
     const auto q = msg_to_state_vector(current_odom);
-    const auto e = express_in_rotated_frame(qr - q, q(3));
+    const auto e = express_in_rotated_frame(qr - q, q(2));
 
     const auto xr = reference_odom.twist.twist.linear.x;
     const auto yr = reference_odom.twist.twist.linear.y;
@@ -122,8 +127,8 @@ private:
     const auto res = drake::systems::controllers::DiscreteTimeLinearQuadraticRegulator(A, B, Q, R);
     const auto K = res.K;
     const auto u = -K * e;
-    const auto v = vr + std::cos(e(3)) + u(1);
-    const auto w = wr + u(2);
+    const auto v = vr + std::cos(e(2)) + u(0);
+    const auto w = wr + u(1);
 
     return std::make_pair(v, w);
   }
@@ -154,8 +159,15 @@ private:
      // auto w = u.second;
 
       auto cmd_msg = std::make_unique<geometry_msgs::msg::Twist>();
-      cmd_msg->linear.x = goal->trajectory[i].twist.twist.linear.x;
-      cmd_msg->angular.z = goal->trajectory[i].twist.twist.angular.z;
+      if (nonholonomic) {
+        cmd_msg->linear.x = goal->trajectory[i].twist.twist.linear.x;
+        cmd_msg->angular.z = goal->trajectory[i].twist.twist.angular.z;
+      } else {
+        const auto longitudinal_velocity = goal->trajectory[i].twist.twist.linear.x;
+        const auto body_theta = msg_to_state_vector(goal->trajectory[i])(2);
+        cmd_msg->linear.x = longitudinal_velocity * std::cos(body_theta);
+        cmd_msg->linear.y = longitudinal_velocity * std::sin(body_theta);
+      }
 
       cmd_pub_->publish(std::move(cmd_msg));
 
@@ -177,6 +189,8 @@ private:
 
   // brief Velocity command publisher
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_pub_;
+
+  bool nonholonomic = true;
 
 };  // class ControllerActionServer
 

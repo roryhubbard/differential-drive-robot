@@ -197,6 +197,7 @@ int main(int argc, char **argv)
 
   auto goal_msg = TrackTrajectory::Goal();
   goal_msg.trajectory = planning_result_future.get()->trajectory;
+  goal_msg.nonholonomic = false;
 
   auto goal_handle_future = send_goal(control_client, goal_msg);
 
